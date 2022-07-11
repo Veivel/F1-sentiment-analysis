@@ -44,3 +44,4 @@ out['topic'] = labels
 
 name = raw_file.split('/')[-1]
 out.to_csv(f'data/labeled/{name}', index=False)
+
