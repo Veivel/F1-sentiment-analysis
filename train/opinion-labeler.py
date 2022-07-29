@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 import os
 
-raw_file = 'data/raw/2022-07-11_14:47:50.csv'
+raw_file = 'train/data/topic-labeled/t_t_2022-07-29_15:55:48.csv'
 data = pd.read_csv(raw_file, header=0)
 
 labels = []
@@ -19,7 +19,7 @@ for i, row in data_copy.iterrows():
     print(f"Label the sentiment of the following tweets.")
     print("Enter 'STOP' to exit.")
     print("0 : neutral / no sentiment\n1 : negative sentiment\n2 : positive sentiment\nX : erase this tweet")
-    print("\nTweet:")
+    print(f"\nTweet about {data_copy['topic'][i]}:")
     print(sentence)
     print("===== "*8)
     
@@ -31,7 +31,7 @@ for i, row in data_copy.iterrows():
         elif inp.lower() == "x":
             inputValid = True
             data.drop(labels=[i], inplace=True)
-        elif inp == "STOP":
+        elif inp.lower() == "stop":
             inputValid = True
             print("Stopping program.")
             sys.exit()
@@ -41,4 +41,6 @@ for i, row in data_copy.iterrows():
 
 out = data.__deepcopy__()
 out['sentiment'] = labels
-out.to_csv(f'data/clean/clean_replies.csv', index=False)
+
+name = raw_file.split('/')[-1]
+out.to_csv(f'train/data/sentiment-labeled/s{name}.csv', index=False)
