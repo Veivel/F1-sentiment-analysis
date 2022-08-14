@@ -1,10 +1,12 @@
-# Made with modifications from https://github.com/nirholas/Get-Tweet-Replies-With-Python-Tweepy
-
 from datetime import datetime as dt
 import pandas as pd
 import csv
 import tweepy
-import ssl
+import sched
+import time
+# import topic_classifier
+
+DELAY_IN_MINUTES = 20
 
 # ssl._create_default_https_context = ssl._create_unverified_context
 def get_credentials():
@@ -25,13 +27,14 @@ def now():
     return dt.now().strftime("%Y-%m-%d_%H:%M:%S")
 
 class replies_retriever:
-    """A retriever of a specific tweet's list of (recent) replies.
-    Please ensure the tweet is actually recent. Thanks."""
+    """A synchronous object, used to pull a specific tweet's list of (recent) replies.
+    Please ensure the original tweet is actually recent. Thanks.
     
-    def __init__(self, tweeter, tweet_id):
-        current_date = now()
-        self.file_path = f'train/data/raw/{current_date}.csv'
-        self.MAX_ITERATIONS = 1000
+    Made with modifications with: https://github.com/nirholas/Get-Tweet-Replies-With-Python-Tweepy"""
+    
+    def __init__(self, tweeter, tweet_id, max_iterations):
+        self.file_path = f'train/data/raw/raw_{tweet_id}.csv'
+        self.MAX_ITERATIONS = max_iterations
         self.tweeter = tweeter
         self.tweet_id = tweet_id
         
@@ -67,21 +70,33 @@ class replies_retriever:
         return replies
     
     def write_to_file_path(self, replies=None):
+        ''' Write tweets to file_path and return file_path itself in string.'''
         if replies == None:
             replies = self.replies
-        path = self.file_path
+        path  = self.file_path
         
-        with open(path, 'w') as f:
+        try: 
+            existing_tweets = pd.read_csv(self.file_path, header=None)
+            existing_ids = list(existing_tweets[0])
+            mode = 'a'
+        except:
+            print("Raw file does note xist yet. Creating new one.")
+            existing_ids = []
+            mode = 'w'
+        
+        with open(path, mode) as f:
             csv_writer = csv.DictWriter(f, fieldnames=('id', 'text'))
-            csv_writer.writeheader()
+            if not mode == 'a':
+                csv_writer.writeheader()
+            i = 0
             for tweet in replies:
-                row = {'id': tweet.id, 'text': tweet.text.replace('\n', ' ')}
-                csv_writer.writerow(row)
-
-        with open('train/data/raw/log.csv', 'a') as f:
-            f.write(f'{path};{self.tweet_id};context;driver,team\n')
+                if not str(tweet.id) in existing_ids:
+                    row = {'id': tweet.id, 'text': tweet.text.replace('\n', ' ')}
+                    csv_writer.writerow(row)
+                    i += 1
             
-        return f"Program finished writing to: {path}\n"
+        print(f"Pulled {i} new tweets.")
+        return path
     
 class searcher:
     """Retriever of tweets that match a specific search query.\n
@@ -127,23 +142,42 @@ class searcher:
         
         return df
     
-    def write_to_file_path(self, df=None):
-        if df == None:
+    def write_to_file_path(self, df="none", file_path=None):
+        if file_path == None:
+            file_path = self.file_path
+        if isinstance(df, str):
             try:
-                self.tweets.to_csv(self.file_path, index=False, header=False)
+                self.tweets.to_csv(file_path, index=False, header=False)
             except:
-                return f"Error writing to {self.file_path}. You used no args, and self.tweets does not exist."
-        df.to_csv(self.file_path, index=False, header=False)
+                return f"Error writing to {file_path}. No args supplied, and self.tweets does not exist."
+        else:
+            df.to_csv(file_path, index=False, header=False)
+        return f"written to {file_path}"
 
-if __name__ == "__main__":
+def main(sc=None, max_iterations=100):
     # update these for the tweet you want to process replies to 
     # 'name' = the account username and you can find the tweet id within the tweet URL
     # note: tweet_id is preferably from a recent tweet.
-    name = 'F1'
-    tweet_id = '1552950055493050372'
+    name = 'F1' 
+    tweet_id = '1557352816624246792'
     
-    rep = replies_retriever(tweeter=name, tweet_id=tweet_id)
+    rep = replies_retriever(tweeter=name, tweet_id=tweet_id, max_iterations=max_iterations)
     replies = rep.pull_replies()
-    msg = rep.write_to_file_path(replies)
+    path = rep.write_to_file_path(replies)
+    # topic_classifier.main(path)
     
+    if sc != None:
+        sc.enter(DELAY_IN_MINUTES * 60, 1, main, (loop,)) # re enter loop
+
+def search():
+    s = searcher("ricciardo")
+    twts = s.pull_tweets()
+    msg = s.write_to_file_path(df=twts, file_path='test/data/ricciardo.csv')
     print(msg)
+
+if __name__ == "__main__":
+    print("\ntwitterer.py now running...")
+    # loop = sched.scheduler(time.time, time.sleep)
+    # loop.enter(DELAY_IN_MINUTES * 60, 1, main, (loop,))
+    # loop.run()
+    search()

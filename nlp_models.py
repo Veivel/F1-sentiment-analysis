@@ -6,7 +6,6 @@ from sklearn.model_selection import train_test_split
 from sklearn import naive_bayes, ensemble, tree
 
 import xgboost
-print("this is printed")
 
 classifiers = {
     'xgb': xgboost.XGBClassifier(),
@@ -38,8 +37,8 @@ class sklearn_model:
             str += f"Score of {name}: {score}\n"
         return str
     
-    def __train(self, clf):
-        clf.fit(self.x, self.y)
+    def __train(self):
+        self.clf.fit(self.x, self.y)
         return "Classifier fit success."
     
     def train(self, classifier):
@@ -49,12 +48,14 @@ class sklearn_model:
             self.clf = classifiers[classifier]
         else:
             self.clf = classifier
-            self.__train(classifier)
+        print(self.clf)
+        msg = self.__train()
+        return(msg)
     
-    def predict(self, x):
+    def predict(self, text):
         """Predict the target variable of x.
         x must be in bag of words (CV fit-transformed) model."""
-        self.x_test = x
+        self.x_test = self.cv.transform(text).toarray()
         self.y_pred = self.clf.predict(self.x_test)
         
         return self.y_pred

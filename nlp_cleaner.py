@@ -9,8 +9,6 @@ from spacy_langdetect import LanguageDetector
 
 # Stopwords to remove
 from nltk.corpus import stopwords as sw
-stopwords = sw.words('English')
-stopwords.remove('not')
 
 import string
 import copy
@@ -41,6 +39,9 @@ class text_cleaner:
         Removes: Links, tags, retweets, emojis'''
         
         res = []
+        stopwords = sw.words('English')
+        stopwords.remove('not')
+        
         for sentence in lst:
             sentence = sentence.lower()     # lower-cases sentence
             
