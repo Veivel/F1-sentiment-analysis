@@ -12,12 +12,15 @@ Understanding the Internet's Opinions on Formula 1
 This is a TEXT CLASSIFICATION and OPINION MINING project, where data is retrieved from replies under official @F1 tweets (and possibly Reddit comments in the future). Each tweet will be classified based on topic (the subject driver or team), and then we will label the tweet's sentiment (positive vs negative opinion).
 
 -----
-### PIPELINE
+### DOCUMENTATION
 
 (1) Pull replies from specified tweet -> (2) Label opinion/sentiment -> (3) Clean text content of tweets (for bag of words model)-> (4) Evaluate & train model -> (5) Test model on unlabeled data
 
+First I use `train/twitterer.py` to pull my train/test data. This is done by pulling tweets that are subreplies of my target tweet, although with the method I use it is limited to retrieving **recent** ones. Second, with the help of `train/sentiment_labeler.py`, I label my data: negative, positive, or neutral. Then I deploy `model.ipynb` to clean and evaluate the model, before using it to predict the sentiment of my test data.
+
+The biggest limitation is the amount of data I have and can obtain. I would need to try a different method, or perhaps use a different platform, to try and obtain more training & testing data.
 -----
 ### TO-DO LIST
+- Obtain metadata (likes, retweets, etc)
 - Gather more training data (!!!)
-- Implement BERT model
-- Gather data from Reddit
+- Implement RNN model
